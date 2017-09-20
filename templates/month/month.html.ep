@@ -1,0 +1,52 @@
+% layout 'default';
+% title  $month_str;
+
+<h1><%= $month_str %></h1>
+<img width="900" height="400" src="/graphs/<%= $month %>">
+<table class="table table-bordered" style="width:900px">
+  <tr>
+    <td>&nbsp;</td>
+    <th>Month Total</th>
+    <th>Best Day</th>
+    <th>Worst Day</th>
+  </tr>
+  <tr>
+    <th>Generation</th>
+    <td><%= kwh $tot_solar %></td>
+    <td><%= $gen_best_date %> <%= kwh $gen_best %></td>
+    <td><%= $gen_worst_date %> <%= kwh $gen_worst %></td>
+  </tr>
+  <tr>
+    <th>Consumption</th>
+    <td><%= kwh $tot_used %></td>
+    <td><%= $used_best_date %> <%= kwh $used_best %></td>
+    <td><%= $used_worst_date %> <%= kwh $used_worst %></td>
+  </tr>
+  <tr>
+    <th>Net</th>
+    <td><%= kwh $tot_used - $tot_solar %></td>
+    <td><%= $net_best_date %> <%= kwh $net_best %></td>
+    <td><%= $net_worst_date %> <%= kwh $net_worst %></td>
+</table>
+
+<h2><a href="/year/<%= substr $month, 0, 4 %>"><%= substr $month, 0, 4 %></a></h2>
+<img width="900" height="400" src="/graphs/<%= substr $month, 0, 4 %>">
+
+<h2>Daily Data</h2>
+<table class="table table-bordered table-hover" style="width:900px">
+  <tr>
+    <th>Date</th>
+    <th>Solar</th>
+    <th>Consumption</th>
+    <th>Net</th>
+  </tr>
+  % for my $day (@$month_data) {
+  <tr <%= $day->{is_weekend} ? 'class=table-active' : '' %> >
+    <td><a href="/day/<%= $day->{date} %>"><%= $day->{date} %></a></td>
+    <td><%= kwh $day->{gen}  %></td>
+    <td><%= kwh $day->{used} %></td>
+    <td><%= kwh $day->{used} - $day->{gen} %></td>
+  </tr>
+  % }
+</table>
+

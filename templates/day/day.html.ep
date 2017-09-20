@@ -1,0 +1,51 @@
+% layout 'default';
+% title  $date_str;
+
+<h1><%= $date_str %></h1>
+<img width="900" height="400" src="/graphs/<%= $date %>">
+<table class="table table-bordered" style="width:900px">
+  <tr>
+    <td>&nbsp;</td>
+    <th>Day Total</th>
+    <th>Best Hour</th>
+    <th>Worst Hour</th>
+  </tr>
+  <tr>
+    <th>Generation</th>
+    <td><%= kwh $tot_solar %></td>
+    <td><%= $gen_best_time %> <%= kwh $gen_best %></td>
+    <td><%= $gen_worst_time %> <%= kwh $gen_worst %></td>
+  </tr>
+  <tr>
+    <th>Consumption</th>
+    <td><%= kwh $tot_used %></td>
+    <td><%= $used_best_time %> <%= kwh $used_best %></td>
+    <td><%= $used_worst_time %> <%= kwh $used_worst %></td>
+  </tr>
+  <tr>
+    <th>Net</th>
+    <td><%= kwh $tot_used - $tot_solar %></td>
+    <td><%= $net_best_time %> <%= kwh $net_best %></td>
+    <td><%= $net_worst_time %> <%= kwh $net_worst %></td>
+</table>
+<h2><a href="/month/<%=$month%>"><%= $month_str %></a></h2>
+<img width="900" height="400" src="/graphs/<%= $month %>">
+
+<h2>Hourly Data</h2>
+<table class="table table-bordered table-hover" style="width:900px">
+  <tr>
+    <th>Hour</th>
+    <th>Solar</th>
+    <th>Consumption</th>
+    <th>Net</th>
+  </tr>
+  % for my $hour (@$hour_data) {
+  <tr>
+    <td><%= $hour->{time} %></a></td>
+    <td><%= kwh $hour->{gen}  %></td>
+    <td><%= kwh $hour->{used} %></td>
+    <td><%= kwh $hour->{used} - $hour->{gen} %></td>
+  </tr>
+  % }
+</table>
+

@@ -1,0 +1,85 @@
+package SolarNG::Controller::Day;
+
+use Mojo::Base 'Mojolicious::Controller';
+use DateTime;
+
+use SolarNG::Util 'query_data';
+
+sub day {
+  my $c = shift;
+
+  if ( $c->stash('date') =~ m/(\d{4}-\d{2}-\d{2})/ ) {
+    $c->stash( 'date', $1 );
+  }
+  else {
+    $c->render( text => "Say wha?" );
+    return;
+  }
+
+  my ($year, $month, $day) = split /-/, $c->stash('date');
+  my $date      = DateTime->new( year => $year, month => $month, day => $day );
+
+
+  my $hour_data = $c->dbh->selectall_arrayref(
+    q{
+      SELECT
+        `solar` / 1000.0 AS 'gen',
+        `consumption` / 1000.0 AS 'used',
+        `time`
+      FROM history WHERE `date` = ?
+      ORDER BY time ASC
+    },
+    { Slice => {} },
+    $c->stash('date'),
+  );
+  $c->stash( hour_data => $hour_data );
+
+  my @queries = (
+    q{
+      SELECT SUM(`solar`) / 1000.0 AS 'tot_solar', SUM(`consumption`) / 1000.0 AS 'tot_used'
+      FROM history WHERE date = ?
+    },
+    q{
+      SELECT `solar` / 1000.0 AS 'gen_best', substr(`time`, 0, 6) AS 'gen_best_time'
+      FROM history WHERE date = ?
+      ORDER BY `solar` DESC LIMIT 1
+    },
+    q{
+      SELECT `solar` / 1000.0 AS 'gen_worst', substr(`time`, 0, 6) AS 'gen_worst_time'
+      FROM history WHERE date = ? AND solar > 0
+      ORDER BY `solar` ASC LIMIT 1
+    },
+    q{
+      SELECT `consumption` / 1000.0 AS 'used_best', substr(`time`, 0, 6) AS 'used_best_time'
+      FROM history WHERE date = ?
+      ORDER BY `consumption` ASC LIMIT 1
+    },
+    q{
+      SELECT `consumption` / 1000.0 AS 'used_worst', substr(`time`, 0, 6) AS 'used_worst_time'
+      FROM history WHERE date = ? AND solar > 0
+      ORDER BY `consumption` DESC LIMIT 1
+    },
+    q{
+      SELECT (`consumption` - `solar`) / 1000.0 AS 'net_best', substr(`time`, 0, 6) AS 'net_best_time'
+      FROM history WHERE date = ?
+      ORDER BY (`consumption` - `solar`) ASC LIMIT 1
+    },
+    q{
+      SELECT (`consumption` - `solar`) / 1000.0 AS 'net_worst', substr(`time`, 0, 6) AS 'net_worst_time'
+      FROM history WHERE date = ?
+      ORDER BY (`consumption` - `solar`) DESC LIMIT 1
+    },
+  );
+
+  my $data;
+  $data->{date_str}  = $date->strftime('%A, %B %e, %Y');
+  $data->{month_str} = $date->strftime('%B %Y');
+  $data->{month}     = $date->strftime('%Y-%m');
+
+  query_data( $c->dbh, \@queries, $data, $c->stash('date') );
+
+  $c->stash(%$data);
+  $c->render;
+}
+
+1;
