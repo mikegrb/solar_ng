@@ -32,6 +32,13 @@ sub generate {
 
   my ( $month_solar, $month_consumption ) = ( 0, 0 );
   my @data;
+
+  # this ones a bit of a dogey kluge but it gets the job done
+  # we check if dow is a weekend, if it's a sat we throw it's epoch in sat
+  # if it's a sun, we append an array of [ sat, sun ] epochs if we have the prior sat,
+  # else just [sun]... markers will hold the Chart::Clicker::Data::Marker objs later
+  my $weekends = { ranges => [], markers => [] };
+
   while ( my $row = $sth->fetchrow_hashref ) {
     $row->{$_} /= 1000 for (qw(consumption solar));
     my $net = $row->{consumption} - $row->{solar};
@@ -49,7 +56,22 @@ sub generate {
       $solar = $row->{solar} + $net;
     }
     push @data, [ $row->{date}, $solar, $row->{consumption}, $net, $deficit, $surplus ];
+
+    # weekend check, see explanation above
+    my $dow = DateTime->from_epoch( epoch => $row->{date} )->day_of_week;
+    if ( $dow >= 6 ) {
+      if ( $dow == 7 ) {
+        push @{ $weekends->{ranges} },
+          [ grep { defined $_ } ( delete $weekends->{sat}, $row->{date} ) ];
+      }
+      else {
+        $weekends->{sat} = $row->{date};
+      }
+    }
   }
+
+  # last day of month was a sat?
+  push @{ $weekends->{ranges} }, [ $weekends->{sat} ] if defined $weekends->{sat};
 
   my $month_net = sprintf('%.2f', $month_consumption -  $month_solar );
   my $sub_title = "Solar $month_solar kWh, Consumed $month_consumption kWh, Grid $month_net kWh";
@@ -79,6 +101,15 @@ sub generate {
   my $ds = Chart::Clicker::Data::DataSet->new( series => [ $serieses{solar}, $serieses{surplus}, $serieses{deficit} ] );
   $cc->add_to_datasets( $ds );
 
+  for my $weekend (@{ $weekends->{ranges} }) {
+    push @{ $weekends->{markers} },
+      Chart::Clicker::Data::Marker->new(
+        key => $weekend->[0] - 43200, # 43200 = 12 hrs padding
+        ( $weekend->[1] ? ( key2 => $weekend->[1] + 43200 ) : () ),
+        inside_color => Graphics::Color::RGB->new( red=>0, green=>0, blue=>0, alpha=>.2 ),
+      );
+  }
+
   my $ctx = $cc->get_context('default');
   $ctx->range_axis->label('kWh');
   $ctx->range_axis->label_font->size(16);
@@ -88,6 +119,8 @@ sub generate {
       bar_padding => 2,
       bar_width   => 20
     ) );
+
+  $ctx->add_marker($_) for @{ $weekends->{markers} };
 
   my $daxis = $ctx->domain_axis;
   $daxis->label('Date');
