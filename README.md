@@ -4,6 +4,8 @@ This is a simple webapp for viewing consumption and generation data for a grid t
 
 Data is pulled from a DB (a SQLite example is included).
 
+![Screen Shot of Month View](screen-shots/month-view.png "Screen Shot of the Month View")
+
 ## Dependencies
 
  * Perl
