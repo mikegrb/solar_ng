@@ -59,19 +59,16 @@ sub generate {
 
     # weekend check, see explanation above
     my $dow = DateTime->from_epoch( epoch => $row->{date} )->day_of_week;
-    if ( $dow >= 6 ) {
-      if ( $dow == 7 ) {
-        push @{ $weekends->{ranges} },
-          [ grep { defined $_ } ( delete $weekends->{sat}, $row->{date} ) ];
-      }
-      else {
-        $weekends->{sat} = $row->{date};
-      }
+    if ( $dow == 7 ) {
+      push @{ $weekends->{ranges} }, $weekends->{sat} ? [ delete $weekends->{sat}, $row->{date} ] : [ ($row->{date}) x 2 ];
+    }
+    elsif ( $dow == 6 ) {
+      $weekends->{sat} = $row->{date};
     }
   }
 
   # last day of month was a sat?
-  push @{ $weekends->{ranges} }, [ $weekends->{sat} ] if defined $weekends->{sat};
+  push @{ $weekends->{ranges} }, [ ( $weekends->{sat} ) x 2 ] if $weekends->{sat};
 
   my $month_net = sprintf('%.2f', $month_consumption -  $month_solar );
   my $sub_title = "Solar $month_solar kWh, Consumed $month_consumption kWh, Grid $month_net kWh";
