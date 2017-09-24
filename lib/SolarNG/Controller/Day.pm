@@ -32,7 +32,17 @@ sub day {
     { Slice => {} },
     $c->stash('date'),
   );
-  $c->stash( hour_data => $hour_data );
+  $c->stash(
+    hour_data => $hour_data,
+    gen_best  => 0,
+    gen_worst => 0,
+    used_best  => 0,
+    used_worst => 0,
+    gen_best_time => '00:00',
+    gen_worst_time => '00:00',
+    used_best_time => '00:00',
+    used_worst_time => '00:00',
+  );
 
   my @queries = (
     q{
