@@ -16,7 +16,8 @@ sub startup {
   $r->get('/year/:date')->to('year#year');
 
   $r->get('/' => sub {
-    shift->redirect_to( '/day/' . DateTime->now->ymd );
+    shift->redirect_to( '/day/' . ( $self->dbh->selectrow_array('SELECT MAX(`date`) FROM `history`') )
+    );
   });
 }
 
