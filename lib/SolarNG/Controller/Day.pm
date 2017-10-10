@@ -5,11 +5,13 @@ use DateTime;
 
 use SolarNG::Util 'query_data';
 
-sub day {
+sub date {
   my $c = shift;
 
+  my $json;
   if ( $c->stash('date') =~ m/(\d{4}-\d{2}-\d{2})/ ) {
     $c->stash( 'date', $1 );
+    $json = $2;
   }
   else {
     $c->render( text => "Say wha?" );
@@ -32,17 +34,18 @@ sub day {
     { Slice => {} },
     $c->stash('date'),
   );
-  $c->stash(
-    hour_data => $hour_data,
-    gen_best  => 0,
-    gen_worst => 0,
-    used_best  => 0,
-    used_worst => 0,
-    gen_best_time => '00:00',
-    gen_worst_time => '00:00',
-    used_best_time => '00:00',
+  my $data = {
+    date             => $c->stash('date'),
+    hour_data       => $hour_data,
+    gen_best        => 0,
+    gen_worst       => 0,
+    used_best       => 0,
+    used_worst      => 0,
+    gen_best_time   => '00:00',
+    gen_worst_time  => '00:00',
+    used_best_time  => '00:00',
     used_worst_time => '00:00',
-  );
+  };
 
   my @queries = (
     q{
@@ -81,7 +84,6 @@ sub day {
     },
   );
 
-  my $data;
   $data->{date_str}  = $date->strftime('%A, %B %e, %Y');
   $data->{month_str} = $date->strftime('%B %Y');
   $data->{month}     = $date->strftime('%Y-%m');
@@ -89,7 +91,11 @@ sub day {
   query_data( $c->dbh, \@queries, $data, $c->stash('date') );
 
   $c->stash(%$data);
-  $c->render;
+
+  $c->respond_to(
+    json => { json => $data },
+    html => { sub { $c->render} }
+  );
 }
 
 1;
