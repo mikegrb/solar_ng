@@ -13,31 +13,33 @@ sub generate {
   my ($package, $dbh, $date) = @_;
 
   my $sth = $dbh->prepare(q{
-    SELECT SUM(`solar`), SUM(`consumption`)
+    SELECT SUM(`solar`), SUM(`consumption`), SUM(`car_used`)
     FROM history
     WHERE `date` = ?
   });
   $sth->execute( $date );
-  my ($gen_total, $used_total) = $sth->fetchrow_array;
+  my ($gen_total, $used_total, $used_total_car) = $sth->fetchrow_array;
 
   my %labels = (
     net => "Net " . ( $used_total - $gen_total ) / 1000 . " kWh",
     solar       => "Solar " . $gen_total / 1000 . " kWh",
     consumption => "Consumption " . $used_total / 1000 . " kWh",
+    car_used    => "Car " . $used_total_car / 1000 . " kWh",
   );
 
   my $cc = Chart::Clicker->new(width => 900, height => 400, format => 'png');
   $cc->color_allocator->add_to_colors( Graphics::Color::RGB->from_hex_string('#4daf4a') );
   $cc->color_allocator->add_to_colors( Graphics::Color::RGB->from_hex_string('#e41a1c') );
+  $cc->color_allocator->add_to_colors( Graphics::Color::RGB->from_hex_string('#a34e75') );
   $cc->color_allocator->add_to_colors( Graphics::Color::RGB->from_hex_string('#377eb8') );
 
   my %serieses;
-  for my $series (qw{ net solar consumption } ) {
+  for my $series (qw{ net solar consumption car_used } ) {
     $serieses{$series} = Chart::Clicker::Data::Series->new( name => $labels{$series} );
   }
 
   $sth = $dbh->prepare(q{
-    SELECT `time`, `solar`, `consumption`, consumption - solar AS `net`
+    SELECT `time`, `solar`, `consumption`, consumption - solar AS `net`, `car_used`
     FROM history
     WHERE `date` = ?
     ORDER BY `time` ASC
@@ -51,10 +53,10 @@ sub generate {
     $row->{time} =~ s/:00$//;
     push @ticks,       $tick;
     push @tick_labels, $row->{time};
-    $serieses{$_}->add_pair( $tick, $row->{$_} / 1000 ) for (qw(solar consumption net));
+    $serieses{$_}->add_pair( $tick, $row->{$_} / 1000 ) for (qw(solar consumption car_used net));
   }
 
-  my $ds = Chart::Clicker::Data::DataSet->new( series => [ @serieses{qw(solar consumption net)} ] );
+  my $ds = Chart::Clicker::Data::DataSet->new( series => [ @serieses{qw(solar consumption car_used net)} ] );
   $cc->add_to_datasets( $ds );
 
   my $ctx = $cc->get_context('default');
