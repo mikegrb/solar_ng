@@ -94,8 +94,7 @@ sub date {
 
   $c->respond_to(
     json => { json => $data },
-    html => { sub { $c->render} }
-  );
+    html => { sub { $c->render } } );
 }
 
 1;
