@@ -7,6 +7,7 @@ use SolarNG::View::YearGraph;
 
 sub graphs {
   my $c = shift;
+  $c->res->headers->cache_control('max-age=1, no-cache');
 
   if ( $c->stash('date') =~ m/(\d{4}-\d{2}-\d{2})/ ) {
     $c->render(
