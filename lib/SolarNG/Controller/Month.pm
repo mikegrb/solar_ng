@@ -43,13 +43,10 @@ sub month {
       : 0
   }
 
-  $c->stash( month_data => $month_data );
-
   my @queries = (
     q{
       SELECT SUM(`solar`) / 1000.0 AS 'tot_solar', SUM(`consumption`) / 1000.0 AS 'tot_used'
       FROM history WHERE date LIKE ?
-      GROUP BY `date`
     },
     q{
       SELECT SUM(`solar`) / 1000.0 AS 'gen_best', `date` AS 'gen_best_date'
@@ -90,15 +87,18 @@ sub month {
   );
 
   my $data;
-  $data->{date_str}  = $date->strftime('%A, %B %e, %Y');
-  $data->{month_str} = $date->strftime('%B %Y');
-  $data->{month}     = $date->strftime('%Y-%m');
+  $data->{date_str}   = $date->strftime('%A, %B %e, %Y');
+  $data->{month_str}  = $date->strftime('%B %Y');
+  $data->{month}      = $date->strftime('%Y-%m');
+  $data->{month_data} = $month_data;
+  $data->{refreshed}  = scalar localtime;
 
   query_data( $c->dbh, \@queries, $data, $c->stash('date') . '-%' );
 
   $c->stash(%$data);
-  $c->render;
+  $c->respond_to(
+    json => { json => $data },
+    html => sub { $c->render } );
 }
 
 1;
-

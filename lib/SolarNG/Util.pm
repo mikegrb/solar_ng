@@ -8,7 +8,7 @@ use DBI;
 sub startup {
   my ( undef, $app ) = @_;
 
-  $app->helper( dbh => sub { DBI->connect('dbi:SQLite:dbname=energy.db') } );
+  $app->helper( dbh => sub { DBI->connect('dbi:SQLite:dbname=/energy/energy.db') } );
 
   # view helpers
   $app->helper( year_month => sub { return substr $_[1], 0, 7 } );

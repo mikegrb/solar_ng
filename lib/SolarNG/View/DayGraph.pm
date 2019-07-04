@@ -24,7 +24,7 @@ sub generate {
     net => "Net " . ( $used_total - $gen_total ) / 1000 . " kWh",
     solar       => "Solar " . $gen_total / 1000 . " kWh",
     consumption => "Consumption " . $used_total / 1000 . " kWh",
-    car_used    => "Car " . $used_total_car / 1000 . " kWh",
+    car_used    => "Car " . (defined($used_total_car) ? $used_total_car / 1000 : 0) . " kWh",
   );
 
   my $cc = Chart::Clicker->new(width => 900, height => 400, format => 'png');
@@ -53,7 +53,7 @@ sub generate {
     $row->{time} =~ s/:00$//;
     push @ticks,       $tick;
     push @tick_labels, $row->{time};
-    $serieses{$_}->add_pair( $tick, $row->{$_} / 1000 ) for (qw(solar consumption car_used net));
+    $serieses{$_}->add_pair( $tick, defined($row->{$_}) ? $row->{$_} / 1000 : 0) for (qw(solar consumption car_used net));
   }
 
   my $ds = Chart::Clicker::Data::DataSet->new( series => [ @serieses{qw(solar consumption car_used net)} ] );

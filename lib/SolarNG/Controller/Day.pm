@@ -88,13 +88,15 @@ sub date {
   $data->{month_str} = $date->strftime('%B %Y');
   $data->{month}     = $date->strftime('%Y-%m');
 
+  $data->{refreshed} = scalar localtime;
+
   query_data( $c->dbh, \@queries, $data, $c->stash('date') );
 
   $c->stash(%$data);
 
   $c->respond_to(
     json => { json => $data },
-    html => { sub { $c->render } } );
+    html => sub { $c->render }  );
 }
 
 1;

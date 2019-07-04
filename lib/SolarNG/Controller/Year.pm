@@ -93,8 +93,9 @@ sub year {
   query_data( $c->dbh, \@queries, $data, $c->stash('date') . '-%' );
 
   $c->stash(%$data);
-  $c->render;
+  $c->respond_to(
+    json => { json => $data },
+    html => sub { $c->render } );
 }
 
 1;
-

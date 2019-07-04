@@ -3,6 +3,7 @@ use Mojo::Base 'Mojolicious';
 
 use DateTime;
 use SolarNG::Util;
+use SolarNG::Controller::Day;
 
 sub startup {
   my $self = shift;
@@ -16,12 +17,24 @@ sub startup {
   $r->get('/year/:date')->to('year#year');
 
   $r->get('/' => sub {
-    shift->redirect_to( '/day/' . ( $self->dbh->selectrow_array('SELECT MAX(`date`) FROM `history`') ) )
+    my $self = shift;
+    $self->redirect_to( '/day/' . latest_date($self) );
   });
 
   $r->get('/json' => sub {
-      shift->render( json => { date => $self->dbh->selectrow_array('SELECT MAX(`date`) FROM `history`') } )
+    my $self = shift;
+    $self->render( json => { date => latest_date($self) } );
   });
+
+  $r->get('/latest.json' => sub {
+    my $self = shift;
+    $self->redirect_to( '/day/' . latest_date($self) . '.json' );
+  });
+}
+
+sub latest_date {
+  my $c = shift;
+  return ( $c->dbh->selectrow_array('SELECT MAX(`date`) FROM `history` WHERE `consumption` > 0') );
 }
 
 1;
